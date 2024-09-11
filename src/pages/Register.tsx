@@ -20,6 +20,7 @@ const Register: React.FC = () => {
         balance: BigInt(0),
         id: generate(),
         password: password,
+        transactions: [],
       });
 
       if (response == '404') {

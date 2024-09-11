@@ -2,10 +2,12 @@ import backend from '@/declarations/export';
 import { useEffect, useState } from 'react';
 import { useCookies } from 'react-cookie';
 import { useNavigate } from 'react-router-dom';
-import { User } from '../declarations/backend/backend.did';
+import { Transactions, User } from '../declarations/backend/backend.did';
 import Card from '@/components/user/Card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { generate } from 'randomstring';
+import Table from '@/components/user/Table';
 const Account: React.FC = () => {
   const [accountid, setAccountId] = useState<string>('');
   const [ammount, setAmount] = useState<BigInt>(0n);
@@ -15,10 +17,11 @@ const Account: React.FC = () => {
     id: '',
     password: '',
     username: '',
+    transactions: [],
   });
   const [cookie, setCookie] = useCookies(['token']);
   const navigate = useNavigate();
-
+  const [transactions, setTransations] = useState<Transactions[]>([]);
   useEffect(() => {
     if (!cookie.token) return navigate('/login');
     (async () => {
@@ -37,6 +40,7 @@ const Account: React.FC = () => {
         String(cookie.token),
         BigInt(Number(ammount)),
         accountid,
+        generate(),
       );
 
       console.log(response);
@@ -109,6 +113,20 @@ const Account: React.FC = () => {
     }
   };
 
+  const fetchUserData = async () => {
+    try {
+      const response = await backend.getAllTransactions(String(cookie.token));
+      if (response[0]) setTransations(response[0]);
+    } catch (e) {
+      console.log(e);
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
   return (
     <>
       <div className="flex flex-col gap-6 p-12 ">
@@ -169,6 +187,10 @@ const Account: React.FC = () => {
             }
             footer={tMsg ? tMsg : 'Info messages will appear here!'}
           />
+        </div>
+        <div className="flex flex-col gap-6">
+          <h2 className="font-bold text-xl">Transactions</h2>
+          <Table transactions={transactions} />
         </div>
       </div>
     </>

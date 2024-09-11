@@ -1,23 +1,40 @@
 import Text "mo:base/Text";
 import Nat32 "mo:base/Nat32";
 import HashMap "mo:base/HashMap";
-import Array "mo:base/Array";
+
 import Nat "mo:base/Nat";
 import Debug "mo:base/Debug";
-import Bool "mo:base/Bool";
+
 import Iter "mo:base/Iter";
+import List "mo:base/List";
+import Array "mo:base/Array";
 
 actor class Backend() {
+
+  type List<T> = ?(T, List<T>);
+
+  public type Transactions = {
+    id : Text;
+    from : Text;
+    to : Text;
+    fromName : Text;
+    toName : Text;
+    amount : Nat;
+    remarks : Text;
+  };
 
   type User = {
     id : Text;
     username : Text;
     password : Text;
     balance : Nat;
+    transactions : List<Transactions>;
   };
 
+  var allTransactions = List.nil<Transactions>();
+
   var users = HashMap.HashMap<Text, User>(0, Text.equal, Text.hash);
-  stable var usersArray : [(Text, User)] = [];
+  var usersArray : [(Text, User)] = [];
 
   public func register(user : User) : async Text {
     let hashedUsername = Nat32.toText(Text.hash(user.username));
@@ -28,6 +45,7 @@ actor class Backend() {
         username = user.username;
         password = Nat32.toText(Text.hash(user.password));
         balance = 100;
+        transactions = List.nil();
       };
 
       users.put(hashedUsername, newUser);
@@ -52,7 +70,7 @@ actor class Backend() {
     };
   };
 
-  public func transfer(username : Text, amount : Nat, accountId : Text) : async Text {
+  public func transfer(username : Text, amount : Nat, accountId : Text, transactionId : Text) : async Text {
     if (username == accountId) {
       return "405";
     };
@@ -68,18 +86,37 @@ actor class Backend() {
           case (?borrower) {
             if (lender.balance >= amount) {
 
-              let l = {
+              let newTransaction : Transactions = {
+                id = Nat32.toText(Text.hash(transactionId));
+                from = lender.id;
+                to = borrower.id;
+                fromName = lender.username;
+                toName = borrower.username;
+                amount = amount;
+                remarks = "";
+              };
+
+              allTransactions := List.push(newTransaction, allTransactions);
+
+              var lt = lender.transactions;
+              lt := List.push(newTransaction, lt);
+
+              let l : User = {
                 id = lender.id;
                 username = lender.username;
                 password = lender.password;
                 balance = lender.balance - amount;
+                transactions = lt;
               };
 
+              var bt = borrower.transactions;
+              bt := List.push(newTransaction, bt);
               let b = {
                 id = borrower.id;
                 username = borrower.username;
                 password = borrower.password;
                 balance = borrower.balance + amount;
+                transactions = bt;
               };
 
               users.put(l.id, l);
@@ -114,6 +151,7 @@ actor class Backend() {
             username = user.username;
             password = user.password;
             balance = 100;
+            transactions = List.nil();
           };
 
           users.put(u.id, u);
@@ -135,6 +173,27 @@ actor class Backend() {
       case (?user) {
         return user.balance;
       };
+    };
+  };
+
+  public query func getUserData(token : Text) : async ?User {
+    switch (users.get(token)) {
+      case (?user) {
+        return ?user;
+      };
+      case (null) {
+        return null; // Return null when user is not found
+      };
+    };
+  };
+
+  public query func getAllTransactions(token : Text) : async ?[Transactions] {
+    switch (users.get(token)) {
+      case (?user) {
+        let transactions = user.transactions;
+        return ?List.toArray(transactions);
+      };
+      case (null) { return null };
     };
   };
 
