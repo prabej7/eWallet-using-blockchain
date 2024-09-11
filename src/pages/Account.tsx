@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { generate } from 'randomstring';
 import Table from '@/components/user/Table';
+import Transaction from '@/components/user/Transaction';
 const Account: React.FC = () => {
   const [accountid, setAccountId] = useState<string>('');
   const [remarks, setRemarks] = useState<string>('');
   const [ammount, setAmount] = useState<BigInt>(0n);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isTransactionOpen, setTransactionOpen] = useState<boolean>(false);
   const [userData, setUser] = useState<User>({
     balance: BigInt(0),
     id: '',
@@ -43,6 +45,7 @@ const Account: React.FC = () => {
         accountid,
         generate(),
         remarks,
+        Date.now().toLocaleString(),
       );
 
       let msg = '';
@@ -50,6 +53,9 @@ const Account: React.FC = () => {
         msg = 'Successfully transfered!';
         checkBalance();
         fetchUserTransactions();
+        setAccountId('');
+        setAmount(BigInt(0));
+        setRemarks('');
       } else if (response == '404') {
         msg = 'No such accounts!';
       } else if (response == '404') {
@@ -125,6 +131,24 @@ const Account: React.FC = () => {
     } finally {
     }
   };
+  const [selectedTransaction, selectTransation] = useState<Transactions>({
+    amount: BigInt(0),
+    from: '',
+    fromName: '',
+    id: '',
+    remarks: '',
+    to: '',
+    toName: '',
+    time: '',
+  });
+  const onClose = () => {
+    setTransactionOpen(!isTransactionOpen);
+  };
+
+  const onTransactionClick = (transaction: Transactions) => {
+    selectTransation(transaction);
+    setTransactionOpen(true);
+  };
 
   useEffect(() => {
     fetchUserTransactions();
@@ -186,6 +210,7 @@ const Account: React.FC = () => {
                 <Input
                   placeholder="Remarks"
                   onChange={(e) => setRemarks(e.target.value)}
+                  value={remarks}
                 />
                 <Button disabled={loading} onClick={handleTransfer}>
                   {loading ? 'Loading...' : 'Transfer'}
@@ -197,9 +222,14 @@ const Account: React.FC = () => {
         </div>
         <div className="flex flex-col gap-6">
           <h2 className="font-bold text-xl">Transactions</h2>
-          <Table transactions={transactions} />
+          <Table transactions={transactions} onClick={onTransactionClick} />
         </div>
       </div>
+      <Transaction
+        open={isTransactionOpen}
+        onClose={onClose}
+        transaction={selectedTransaction}
+      />
     </>
   );
 };

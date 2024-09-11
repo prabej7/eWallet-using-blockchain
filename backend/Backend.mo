@@ -8,6 +8,7 @@ import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import List "mo:base/List";
 import Array "mo:base/Array";
+import Time "mo:base/Time";
 
 actor class Backend() {
 
@@ -21,6 +22,7 @@ actor class Backend() {
     toName : Text;
     amount : Nat;
     remarks : Text;
+    time : Text;
   };
 
   type User = {
@@ -29,6 +31,7 @@ actor class Backend() {
     password : Text;
     balance : Nat;
     transactions : List<Transactions>;
+
   };
 
   stable var allTransactions = List.nil<Transactions>();
@@ -46,6 +49,7 @@ actor class Backend() {
         password = Nat32.toText(Text.hash(user.password));
         balance = 100;
         transactions = List.nil();
+
       };
 
       users.put(hashedUsername, newUser);
@@ -70,7 +74,7 @@ actor class Backend() {
     };
   };
 
-  public func transfer(username : Text, amount : Nat, accountId : Text, transactionId : Text, remarks : Text) : async Text {
+  public func transfer(username : Text, amount : Nat, accountId : Text, transactionId : Text, remarks : Text, date: Text) : async Text {
     if (username == accountId) {
       return "405";
     };
@@ -94,6 +98,7 @@ actor class Backend() {
                 toName = borrower.username;
                 amount = amount;
                 remarks = remarks;
+                time = date;
               };
 
               allTransactions := List.push(newTransaction, allTransactions);
@@ -188,6 +193,7 @@ actor class Backend() {
   };
 
   public query func getAllTransactions(token : Text) : async ?[Transactions] {
+
     switch (users.get(token)) {
       case (?user) {
         let transactions = user.transactions;
