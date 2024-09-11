@@ -85,8 +85,12 @@ const Table: React.FC<{ transactions: Transactions[] }> = ({
           return (
             <TableRow>
               <TableCell className="font-medium">{transaction.id}</TableCell>
-              <TableCell>{transaction.from}</TableCell>
-              <TableCell>{transaction.to}</TableCell>
+              <TableCell>
+                {transaction.from} ({transaction.fromName})
+              </TableCell>
+              <TableCell>
+                {transaction.to} ({transaction.toName})
+              </TableCell>
               <TableCell className="text-right">
                 ${Number(transaction.amount)}
               </TableCell>

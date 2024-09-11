@@ -10,6 +10,7 @@ import { generate } from 'randomstring';
 import Table from '@/components/user/Table';
 const Account: React.FC = () => {
   const [accountid, setAccountId] = useState<string>('');
+  const [remarks, setRemarks] = useState<string>('');
   const [ammount, setAmount] = useState<BigInt>(0n);
   const [loading, setLoading] = useState<boolean>(false);
   const [userData, setUser] = useState<User>({
@@ -38,15 +39,17 @@ const Account: React.FC = () => {
     try {
       const response = await backend.transfer(
         String(cookie.token),
-        BigInt(Number(ammount)),
+        BigInt(Math.abs(Number(ammount))),
         accountid,
         generate(),
+        remarks,
       );
 
-      console.log(response);
       let msg = '';
       if (response == '200') {
         msg = 'Successfully transfered!';
+        checkBalance();
+        fetchUserTransactions();
       } else if (response == '404') {
         msg = 'No such accounts!';
       } else if (response == '404') {
@@ -113,10 +116,10 @@ const Account: React.FC = () => {
     }
   };
 
-  const fetchUserData = async () => {
+  const fetchUserTransactions = async () => {
     try {
       const response = await backend.getAllTransactions(String(cookie.token));
-      if (response[0]) setTransations(response[0]);
+      if (response[0]) setTransations(response[0].reverse());
     } catch (e) {
       console.log(e);
     } finally {
@@ -124,7 +127,7 @@ const Account: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUserData();
+    fetchUserTransactions();
   }, []);
 
   return (
@@ -179,6 +182,10 @@ const Account: React.FC = () => {
                   placeholder="Amount"
                   onChange={(e) => setAmount(BigInt(e.target.value))}
                   value={String(ammount)}
+                />
+                <Input
+                  placeholder="Remarks"
+                  onChange={(e) => setRemarks(e.target.value)}
                 />
                 <Button disabled={loading} onClick={handleTransfer}>
                   {loading ? 'Loading...' : 'Transfer'}

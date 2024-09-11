@@ -31,10 +31,10 @@ actor class Backend() {
     transactions : List<Transactions>;
   };
 
-  var allTransactions = List.nil<Transactions>();
+  stable var allTransactions = List.nil<Transactions>();
 
   var users = HashMap.HashMap<Text, User>(0, Text.equal, Text.hash);
-  var usersArray : [(Text, User)] = [];
+  stable var usersArray : [(Text, User)] = [];
 
   public func register(user : User) : async Text {
     let hashedUsername = Nat32.toText(Text.hash(user.username));
@@ -70,7 +70,7 @@ actor class Backend() {
     };
   };
 
-  public func transfer(username : Text, amount : Nat, accountId : Text, transactionId : Text) : async Text {
+  public func transfer(username : Text, amount : Nat, accountId : Text, transactionId : Text, remarks : Text) : async Text {
     if (username == accountId) {
       return "405";
     };
@@ -93,7 +93,7 @@ actor class Backend() {
                 fromName = lender.username;
                 toName = borrower.username;
                 amount = amount;
-                remarks = "";
+                remarks = remarks;
               };
 
               allTransactions := List.push(newTransaction, allTransactions);
